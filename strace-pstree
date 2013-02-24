@@ -1,0 +1,55 @@
+#!/usr/bin/env perl
+
+use v5.16;
+use Text::ParseWords;
+
+our $VERSION = '0.01';
+
+my %pstree = ();
+my $start;
+
+while ( my $line = readline ) {
+    chomp $line;
+
+    # The execve(2) system call is made by the child process to execute the
+    # command.
+    #
+    # 26317 execve("/usr/bin/sh", ["sh", "foo.sh"], [/* 108 vars */]) = 0
+    if ( $line =~ /^(\d+)\s+execve\(.*?, \[(.*?)\],/ ) {
+        $start //= $1;
+        $pstree{$1}{'command'} = [ quotewords( ',\s+', 0, $2 ) ];
+        next;
+    }
+
+    # The clone(2) system call is made by the parent process to clone itself
+    # into a child process. This gives us the pid of the child.
+    if ( $line =~ /^(\d+)\s+clone.*=\s(\d+)$/ ) {
+        push @{ $pstree{$1}{'children'} }, $2;
+        next;
+    }
+}
+
+print_tree( \%pstree, $start, [] );
+exit;
+
+sub print_tree {
+    my ( $pstree, $pid, $prefix ) = @_;
+
+    my $last = pop @$prefix;
+
+    print map { defined $_ ? s/--/  /r : () } @$prefix;
+    print $last // '';
+    print "[$pid] ", ( join ' ', @{ $pstree->{$pid}{'command'} } );
+    print "\n";
+
+    my @children = @{ $pstree->{$pid}{'children'} // [] };
+
+    while ( my $child = shift @children ) {
+        if ( @children ) {
+            print_tree( $pstree, $child, [ @$prefix, $last, '|-- ' ] );
+        }
+        else {
+            print_tree( $pstree, $child, [ @$prefix, $last, '`-- ' ] );
+        }
+    }
+}
