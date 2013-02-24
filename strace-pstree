@@ -53,3 +53,40 @@ sub print_tree {
         }
     }
 }
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+strace-pstree - Generate pstree(1)-like output from strace(1) capture
+
+=head1 SYNOPSIS
+
+strace -f command ... 2>&1 | B<strace-pstree>
+
+=head1 OPTIONS
+
+=over
+
+=back
+
+=head1 DESCRIPTION
+
+    [3371] sh foo.sh
+    |-- [3372] /bin/echo foo
+    |-- [3373] /bin/echo "bar"
+    |-- [3374] sh bar.sh
+    |   `-- [3375] /bin/true
+    `-- [3376] /bin/date
+
+=head1 AUTHOR
+
+Christopher Grau L<mailto:cgrau@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright E<copy> 2013, Christopher Grau.
+
+=cut
